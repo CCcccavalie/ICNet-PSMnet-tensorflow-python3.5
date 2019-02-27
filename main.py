@@ -6,10 +6,10 @@ import tensorflow as tf
 import numpy as np
 import time
 import math
-from dataloader import readpfm as rp
 from PIL import Image, ImageOps
 from model import *
-
+import re
+import sys
 
 #input_arg
 parser = argparse.ArgumentParser(description='PSMNet')
@@ -17,16 +17,47 @@ parser.add_argument('--maxdisp', type=int ,default=192,
                     help='maxium disparity')
 parser.add_argument('--datapath', default='./data_stereo_flow/', 
                     help='datapath')
-parser.add_argument('--epochs', type=int, default=0,
+parser.add_argument('--epochs', type=int, default=5,
                     help='number of epochs to train')
 
 args = parser.parse_args()
 batch_size=2;
 use_bn_flag=False;
 
+def readPFM(file):
+    file = open(file, 'rb')
+    header = file.readline().rstrip()
+    color = None
+    width = None
+    height = None
+    scale = None
+    endian = None
+    if header == b'PF':
+        color = True
+    elif header == b'Pf':
+        color = False
+    else:
+        raise Exception('Not a PFM file.')
+
+    A=str(file.readline().rstrip())[2:-1]
+    A1,A2=A.split(' ')
+    width=int(A1)
+    height=int(A2)
+    scale = float(file.readline().rstrip())
+    if scale < 0: # little-endian
+        endian = '<'
+        scale = -scale
+    else:
+        endian = '>' # big-endian
+    data = np.fromfile(file, endian + 'f')
+    shape = (height, width, 3) if color else (height, width)
+    data = np.reshape(data, shape)
+    data = np.flipud(data)
+    return data, scale
 
 print('Called with args:')
 print(args)
+
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP']
@@ -113,7 +144,7 @@ def list_to_img(all_left_img,all_right_img,all_left_disp,index,batchsize,trainin
     for i in range(batchsize):
         left_img=Image.open(all_left_img[initial_index+i]).convert('RGB')
         right_img=Image.open(all_right_img[initial_index+i]).convert('RGB')
-        left_disp,_=rp.readPFM(all_left_disp[initial_index+i])
+        left_disp,_=readPFM(all_left_disp[initial_index+i])
         left_disp=np.ascontiguousarray(left_disp,dtype=np.float32)
         if training:  
             w, h = left_img.size
