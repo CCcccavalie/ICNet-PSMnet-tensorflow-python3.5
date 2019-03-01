@@ -34,7 +34,7 @@ class Model:
         self.outputs = self.CNN3D(self.cost,self.reg,use_bn=self.use_bn)
         self.disps = self.output(self.outputs)#size of (B, H, W),3个out
         self.loss = 0.5*self._smooth_l1_loss(self.disps[0], self.dataL)+0.7*self._smooth_l1_loss(self.disps[1], self.dataL)+self._smooth_l1_loss(self.disps[2], self.dataL)
-        learning_rate = 1e-5
+        learning_rate = 1e-4
         if self.use_bn:
              learning_rate=learning_rate*10
         optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
