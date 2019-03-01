@@ -55,12 +55,10 @@ def readPFM(file):
     data = np.flipud(data)
     return data, scale
 
-print('Called with args:')
-print(args)
-
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP']
+
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
@@ -126,9 +124,18 @@ def load_data_list(filepath):
                     if is_image_file(driving_dir+i+'/'+j+'/'+k+'/right/'+im):
                         all_right_img.append(driving_dir+i+'/'+j+'/'+k+'/right/'+im)
 
-    return all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_left_disp
+    index = [i for i in range(len(all_left_img))]
+    random.shuffle(index)
+    shuffled_left_data = []
+    shuffled_right_data = []
+    shuffled_labels = []
+    for i in index:
+        shuffled_left_data.append(all_left_img[i])
+        shuffled_right_data.append(all_right_img[i])
+        shuffled_labels.append(all_left_disp[i])
 
-#img_normalization
+    return shuffled_left_data, shuffled_right_data, shuffled_labels, test_left_img, test_right_img, test_left_disp
+
 def scale_crop(input_img):
     input_img = input_img/255
     input_img[:,:,0] = (input_img[:,:,0] - 0.485)/0.229
@@ -167,8 +174,7 @@ def list_to_img(all_left_img,all_right_img,all_left_disp,index,batchsize,trainin
     batch_left_disp=np.array(list_left_disp)
     return batch_left_img,batch_right_img,batch_left_disp
 
-#read data_path
-all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_left_disp = load_data_list(args.datapath)
+all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_left_disp = load_data_list('E:/PSMNet-Tensorflow/data_stereo_flow/')
 
 def main():
         with tf.Session() as sess:
